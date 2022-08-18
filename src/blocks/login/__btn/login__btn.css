@@ -14,7 +14,7 @@
     transition: opacity .5s linear;
     outline: none;
     align-content: center;
-    margin: 216px auto 0 auto;
+    margin: 216px auto 112px auto;
 }
 
 .popup__save:hover {

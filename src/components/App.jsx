@@ -30,14 +30,17 @@ function App() {
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
-  const [currentUser, setCurrentUser] = useState({});
+  const [currentUser, setCurrentUser] = useState([]);
   const [cards, setCards] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const isOpen = isEditAvatarPopupOpen || isEditProfilePopupOpen || isAddPlacePopupOpen || selectedCard
 
   const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
   const [infoTooltipImage, setInfoTooltipImage] = useState(imageSuccess);
   const [infoTooltipMessage, setInfoTooltipMessage] = useState("");
   const [userInfo, setUserInfo] = useState('');
   const history = useHistory();
+  
 
   const checkToken = () => {
     const token = localStorage.getItem("jwt");
@@ -45,9 +48,9 @@ function App() {
       return;
     }
       auth
-        .getContent(token)
-        .then((email) => {
-          setUserInfo(email);
+        .checkToken(token)
+        .then((res) => {
+          setUserInfo(res.data.email);
           setLoggedIn(true);
           history.push("/");
           })
@@ -78,6 +81,20 @@ function App() {
         });
     }
   }, [loggedIn]);
+
+  useEffect(() => {
+    function closeByEscape(evt) {
+      if(evt.key === 'Escape') {
+        closeAllPopups();
+      }
+    }
+    if(isOpen) {
+      document.addEventListener('keydown', closeByEscape);
+      return () => {
+        document.removeEventListener('keydown', closeByEscape);
+      }
+    }
+  }, [isOpen]) 
 
   const handleCardClick = (card) => {
     setSelectedCard(card);
@@ -157,7 +174,7 @@ function App() {
         setCards([newCard, ...cards]);
         closeAllPopups();
       })
-      .catch((err) => console.log(err));
+      .catch((err) => console.log(err))
   }
 
   const onLogin = (email, password) => {
@@ -183,15 +200,16 @@ function App() {
       .then(() => {
         setInfoTooltipImage(imageSuccess);
         setInfoTooltipMessage("Вы успешно зарегистрировались!");
-        setIsInfoTooltipOpen(true);
         history.push("/sign-in");
       })
       .catch((err) => {
         console.log(err);
         setInfoTooltipImage(imageFail);
         setInfoTooltipMessage("Что-то пошло не так! Попробуйте ещё раз.");
+      })
+      .finally(()=> {
         setIsInfoTooltipOpen(true);
-      });
+      })
   };
 
   const onLogOut = () => {
@@ -205,7 +223,6 @@ function App() {
       <div className="page">
         <div className="page__container">
           <Header
-            loggedIn={loggedIn}
             userEmail={userInfo}
             onLogOut={onLogOut}
           />
@@ -243,19 +260,19 @@ function App() {
           isOpen={isAddPlacePopupOpen}
           onClose={closeAllPopups}
           onAddPlace={handleAddPlaceSubmit}
-        ></AddPlacePopup>
+        />
 
         <EditProfilePopup
           isOpen={isEditProfilePopupOpen}
           onClose={closeAllPopups}
           onUpdateUser={handleUpdateUser}
-        ></EditProfilePopup>
+        />
 
         <EditAvatarPopup
           isOpen={isEditAvatarPopupOpen}
           onClose={closeAllPopups}
           onUpdateAvatar={handleUpdateAvatar}
-        ></EditAvatarPopup>
+        />
 
         <ImagePopup card={selectedCard} onClose={closeAllPopups} />
 
